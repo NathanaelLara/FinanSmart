@@ -44,3 +44,36 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+
+# =========================
+# Sensitive / private files
+# =========================
+
+# Environment variables
+.env
+.env.*
+*.env
+
+# Android local/private config
+android/local.properties
+android/key.properties
+key.properties
+
+# Android signing keys
+*.jks
+*.keystore
+android/app/*.jks
+android/app/*.keystore
+
+# Firebase Admin / service account credentials
+*serviceAccount*.json
+*service-account*.json
+firebase-adminsdk*.json
+google-services-service-account*.json
+
+# Firebase client config for public repos
+lib/firebase_options.dart
+android/app/google-services.json
+
+# IDE / Editor
+.vscode/
