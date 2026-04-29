@@ -28,24 +28,6 @@ class FinancialProductsRepository {
     return user.uid;
   }
 
-  Future<List<FinancialProductModel>> getProducts() async {
-    final userId = _currentUserId;
-    final snapshot = await _productsRef
-        .where('userId', isEqualTo: userId)
-        .where('isActive', isEqualTo: true)
-        .get();
-
-    final products =
-        snapshot.docs
-            .map(
-              (doc) =>
-                  FinancialProductModel.fromMap({...doc.data(), 'id': doc.id}),
-            )
-            .toList()
-          ..sort((a, b) => a.name.compareTo(b.name));
-    return products;
-  }
-
   Future<FinancialProductModel> createProduct(
     FinancialProductModel product,
   ) async {
@@ -54,12 +36,41 @@ class FinancialProductsRepository {
         ? _productsRef.doc()
         : _productsRef.doc(product.id);
     final productToSave = product.copyWith(id: docRef.id, userId: userId);
+
     await docRef.set(productToSave.toMap());
-    final snapshot = await docRef.get();
-    return FinancialProductModel.fromMap({
-      ...snapshot.data()!,
-      'id': snapshot.id,
-    });
+    final savedDoc = await docRef.get();
+    return FinancialProductModel.fromFirestore(savedDoc);
+  }
+
+  Future<List<FinancialProductModel>> getProducts() async {
+    final userId = _currentUserId;
+    final snapshot = await _productsRef
+        .where('userId', isEqualTo: userId)
+        .get();
+
+    final products =
+        snapshot.docs.map(FinancialProductModel.fromFirestore).toList()
+          ..sort((a, b) {
+            final activeCompare = b.isActive.toString().compareTo(
+              a.isActive.toString(),
+            );
+            if (activeCompare != 0) {
+              return activeCompare;
+            }
+            return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+          });
+    return products;
+  }
+
+  Future<List<FinancialProductModel>> getActiveProducts() async {
+    final userId = _currentUserId;
+    final snapshot = await _productsRef
+        .where('userId', isEqualTo: userId)
+        .where('isActive', isEqualTo: true)
+        .get();
+
+    return snapshot.docs.map(FinancialProductModel.fromFirestore).toList()
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
   }
 
   Future<FinancialProductModel> updateProduct(
@@ -68,10 +79,12 @@ class FinancialProductsRepository {
     final userId = _currentUserId;
     final docRef = _productsRef.doc(product.id);
     final snapshot = await docRef.get();
+
     if (!snapshot.exists) {
       throw StateError('El producto financiero no existe.');
     }
-    final existing = FinancialProductModel.fromMap(snapshot.data()!);
+
+    final existing = FinancialProductModel.fromFirestore(snapshot);
     if (existing.userId != userId) {
       throw StateError('No puedes editar productos de otro usuario.');
     }
@@ -81,31 +94,45 @@ class FinancialProductsRepository {
       createdAt: existing.createdAt,
     );
     await docRef.set(productToSave.toMap(), SetOptions(merge: true));
-    final updatedSnapshot = await docRef.get();
-    return FinancialProductModel.fromMap({
-      ...updatedSnapshot.data()!,
-      'id': updatedSnapshot.id,
-    });
+    final updatedDoc = await docRef.get();
+    return FinancialProductModel.fromFirestore(updatedDoc);
   }
 
   Future<void> deleteProduct(String productId) async {
-    final userId = _currentUserId;
-    final docRef = _productsRef.doc(productId);
-    final snapshot = await docRef.get();
-    if (!snapshot.exists) {
-      return;
-    }
-    final product = FinancialProductModel.fromMap(snapshot.data()!);
-    if (product.userId != userId) {
-      throw StateError('No puedes eliminar productos de otro usuario.');
-    }
+    final docRef = await _verifiedProductRef(productId);
+    await docRef.delete();
+  }
+
+  Future<FinancialProductModel> deactivateProduct(String productId) async {
+    final docRef = await _verifiedProductRef(productId);
     await docRef.update({
       'isActive': false,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+    final updatedDoc = await docRef.get();
+    return FinancialProductModel.fromFirestore(updatedDoc);
   }
 
   Future<void> saveProduct(FinancialProductModel product) async {
     await createProduct(product);
+  }
+
+  Future<DocumentReference<Map<String, dynamic>>> _verifiedProductRef(
+    String productId,
+  ) async {
+    final userId = _currentUserId;
+    final docRef = _productsRef.doc(productId);
+    final snapshot = await docRef.get();
+
+    if (!snapshot.exists) {
+      throw StateError('El producto financiero no existe.');
+    }
+
+    final product = FinancialProductModel.fromFirestore(snapshot);
+    if (product.userId != userId) {
+      throw StateError('No puedes gestionar productos de otro usuario.');
+    }
+
+    return docRef;
   }
 }

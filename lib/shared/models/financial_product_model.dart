@@ -1,7 +1,15 @@
-import 'transaction_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum FinancialProductType { creditCard, loan }
+import 'transaction_model.dart';
+
+enum FinancialProductType {
+  bankAccount,
+  creditCard,
+  loan,
+  savingsAccount,
+  investment,
+  other,
+}
 
 class FinancialProductModel {
   const FinancialProductModel({
@@ -9,13 +17,17 @@ class FinancialProductModel {
     required this.userId,
     required this.name,
     required this.type,
-    required this.provider,
-    required this.currentBalance,
+    required this.institutionName,
     required this.currency,
-    this.creditLimit,
-    this.monthlyPayment,
-    this.dueDate,
+    required this.balance,
+    this.limitAmount,
     this.interestRate,
+    this.minimumPayment,
+    this.monthlyPayment,
+    this.dueDay,
+    this.paymentDate,
+    this.openingDate,
+    this.notes,
     this.isActive = true,
     this.createdAt,
     this.updatedAt,
@@ -25,33 +37,48 @@ class FinancialProductModel {
   final String userId;
   final String name;
   final FinancialProductType type;
-  final String provider;
-  final double currentBalance;
+  final String institutionName;
   final CurrencyType currency;
-  final double? creditLimit;
-  final double? monthlyPayment;
-  final DateTime? dueDate;
+  final double balance;
+  final double? limitAmount;
   final double? interestRate;
+  final double? minimumPayment;
+  final double? monthlyPayment;
+  final int? dueDay;
+  final DateTime? paymentDate;
+  final DateTime? openingDate;
+  final String? notes;
   final bool isActive;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
-  double get balance => currentBalance;
-  double get limit => creditLimit ?? 0;
+  String get provider => institutionName;
+  double get currentBalance => balance;
+  double get limit => limitAmount ?? 0;
+  double? get creditLimit => limitAmount;
+  DateTime? get dueDate => paymentDate;
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'userId': userId,
-      'type': type.firestoreValue,
       'name': name,
-      'provider': provider,
+      'type': type.firestoreValue,
+      'institutionName': institutionName,
       'currency': currency.code,
-      'currentBalance': currentBalance,
-      'creditLimit': creditLimit,
-      'monthlyPayment': monthlyPayment,
-      'dueDate': dueDate == null ? null : Timestamp.fromDate(dueDate!),
+      'balance': balance,
+      'limitAmount': limitAmount,
       'interestRate': interestRate,
+      'minimumPayment': minimumPayment,
+      'monthlyPayment': monthlyPayment,
+      'dueDay': dueDay,
+      'paymentDate': paymentDate == null
+          ? null
+          : Timestamp.fromDate(paymentDate!),
+      'openingDate': openingDate == null
+          ? null
+          : Timestamp.fromDate(openingDate!),
+      'notes': notes,
       'isActive': isActive,
       'createdAt': createdAt == null
           ? FieldValue.serverTimestamp()
@@ -60,19 +87,36 @@ class FinancialProductModel {
     };
   }
 
+  factory FinancialProductModel.fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    return FinancialProductModel.fromMap({...?doc.data(), 'id': doc.id});
+  }
+
   factory FinancialProductModel.fromMap(Map<String, dynamic> map) {
     return FinancialProductModel(
       id: map['id'] as String? ?? '',
       userId: map['userId'] as String? ?? '',
       name: map['name'] as String? ?? '',
       type: FinancialProductTypeX.fromFirestoreValue(map['type'] as String?),
-      provider: map['provider'] as String? ?? '',
-      currentBalance: (map['currentBalance'] as num?)?.toDouble() ?? 0,
+      institutionName:
+          map['institutionName'] as String? ?? map['provider'] as String? ?? '',
       currency: CurrencyTypeX.fromCode(map['currency'] as String?),
-      creditLimit: (map['creditLimit'] as num?)?.toDouble(),
-      monthlyPayment: (map['monthlyPayment'] as num?)?.toDouble(),
-      dueDate: _readTimestamp(map['dueDate']),
+      balance:
+          (map['balance'] as num?)?.toDouble() ??
+          (map['currentBalance'] as num?)?.toDouble() ??
+          0,
+      limitAmount:
+          (map['limitAmount'] as num?)?.toDouble() ??
+          (map['creditLimit'] as num?)?.toDouble(),
       interestRate: (map['interestRate'] as num?)?.toDouble(),
+      minimumPayment: (map['minimumPayment'] as num?)?.toDouble(),
+      monthlyPayment: (map['monthlyPayment'] as num?)?.toDouble(),
+      dueDay: (map['dueDay'] as num?)?.toInt(),
+      paymentDate:
+          _readTimestamp(map['paymentDate']) ?? _readTimestamp(map['dueDate']),
+      openingDate: _readTimestamp(map['openingDate']),
+      notes: map['notes'] as String?,
       isActive: map['isActive'] as bool? ?? true,
       createdAt: _readTimestamp(map['createdAt']),
       updatedAt: _readTimestamp(map['updatedAt']),
@@ -84,13 +128,17 @@ class FinancialProductModel {
     String? userId,
     String? name,
     FinancialProductType? type,
-    String? provider,
-    double? currentBalance,
+    String? institutionName,
     CurrencyType? currency,
-    double? creditLimit,
-    double? monthlyPayment,
-    DateTime? dueDate,
+    double? balance,
+    double? limitAmount,
     double? interestRate,
+    double? minimumPayment,
+    double? monthlyPayment,
+    int? dueDay,
+    DateTime? paymentDate,
+    DateTime? openingDate,
+    String? notes,
     bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -100,13 +148,17 @@ class FinancialProductModel {
       userId: userId ?? this.userId,
       name: name ?? this.name,
       type: type ?? this.type,
-      provider: provider ?? this.provider,
-      currentBalance: currentBalance ?? this.currentBalance,
+      institutionName: institutionName ?? this.institutionName,
       currency: currency ?? this.currency,
-      creditLimit: creditLimit ?? this.creditLimit,
-      monthlyPayment: monthlyPayment ?? this.monthlyPayment,
-      dueDate: dueDate ?? this.dueDate,
+      balance: balance ?? this.balance,
+      limitAmount: limitAmount ?? this.limitAmount,
       interestRate: interestRate ?? this.interestRate,
+      minimumPayment: minimumPayment ?? this.minimumPayment,
+      monthlyPayment: monthlyPayment ?? this.monthlyPayment,
+      dueDay: dueDay ?? this.dueDay,
+      paymentDate: paymentDate ?? this.paymentDate,
+      openingDate: openingDate ?? this.openingDate,
+      notes: notes ?? this.notes,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -117,21 +169,84 @@ class FinancialProductModel {
     if (value is Timestamp) {
       return value.toDate();
     }
+    if (value is DateTime) {
+      return value;
+    }
     return null;
   }
 }
 
 extension FinancialProductTypeX on FinancialProductType {
-  String get firestoreValue =>
-      this == FinancialProductType.creditCard ? 'credit_card' : 'loan';
+  String get firestoreValue {
+    switch (this) {
+      case FinancialProductType.bankAccount:
+        return 'bank_account';
+      case FinancialProductType.creditCard:
+        return 'credit_card';
+      case FinancialProductType.loan:
+        return 'loan';
+      case FinancialProductType.savingsAccount:
+        return 'savings_account';
+      case FinancialProductType.investment:
+        return 'investment';
+      case FinancialProductType.other:
+        return 'other';
+    }
+  }
+
+  String get displayName {
+    switch (this) {
+      case FinancialProductType.bankAccount:
+        return 'Cuenta bancaria';
+      case FinancialProductType.creditCard:
+        return 'Tarjeta de credito';
+      case FinancialProductType.loan:
+        return 'Prestamo';
+      case FinancialProductType.savingsAccount:
+        return 'Cuenta de ahorro';
+      case FinancialProductType.investment:
+        return 'Inversion';
+      case FinancialProductType.other:
+        return 'Otro';
+    }
+  }
+
+  IconDataData get iconData {
+    switch (this) {
+      case FinancialProductType.creditCard:
+        return IconDataData.creditCard;
+      case FinancialProductType.loan:
+        return IconDataData.loan;
+      case FinancialProductType.investment:
+        return IconDataData.investment;
+      case FinancialProductType.bankAccount:
+      case FinancialProductType.savingsAccount:
+        return IconDataData.account;
+      case FinancialProductType.other:
+        return IconDataData.other;
+    }
+  }
 
   static FinancialProductType fromFirestoreValue(String? value) {
     switch (value) {
+      case 'bank_account':
+      case 'bankAccount':
+        return FinancialProductType.bankAccount;
       case 'loan':
         return FinancialProductType.loan;
+      case 'savings_account':
+      case 'savingsAccount':
+        return FinancialProductType.savingsAccount;
+      case 'investment':
+        return FinancialProductType.investment;
+      case 'other':
+        return FinancialProductType.other;
       case 'credit_card':
+      case 'creditCard':
       default:
         return FinancialProductType.creditCard;
     }
   }
 }
+
+enum IconDataData { account, creditCard, loan, investment, other }
