@@ -13,7 +13,7 @@ class CurrencyFormatter {
       case CurrencyType.usd:
         return NumberFormat.currency(
           locale: 'en_US',
-          symbol: '\$',
+          symbol: 'US\$',
         ).format(amount);
       case CurrencyType.dop:
         return NumberFormat.currency(

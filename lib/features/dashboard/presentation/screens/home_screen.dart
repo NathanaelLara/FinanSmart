@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../financial_health/presentation/providers/financial_health_provider.dart';
+import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../financial_health/presentation/screens/financial_health_screen.dart';
 import '../../../financial_products/presentation/providers/financial_products_provider.dart';
 import '../../../financial_products/presentation/screens/financial_products_screen.dart';
@@ -43,6 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<DashboardProvider>().loadDashboard();
       context.read<TransactionsProvider>().loadTransactions();
       context.read<FinancialProductsProvider>().loadProducts();
       context.read<ReportsProvider>().loadReports();
@@ -77,6 +79,9 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) {
           setState(() => _currentIndex = index);
+          if (index == 0) {
+            context.read<DashboardProvider>().refreshDashboard();
+          }
         },
         destinations: const [
           NavigationDestination(

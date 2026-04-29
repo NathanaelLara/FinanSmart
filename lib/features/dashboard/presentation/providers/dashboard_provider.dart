@@ -1,57 +1,58 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../shared/models/financial_product_model.dart';
-import '../../../../shared/models/transaction_model.dart';
 import '../../data/dashboard_repository.dart';
-
-class DashboardOverview {
-  const DashboardOverview({
-    required this.balance,
-    required this.income,
-    required this.expense,
-    required this.estimatedSavings,
-    required this.activeProducts,
-  });
-
-  final double balance;
-  final double income;
-  final double expense;
-  final double estimatedSavings;
-  final int activeProducts;
-}
+import '../../data/dashboard_summary.dart';
 
 class DashboardProvider extends ChangeNotifier {
   DashboardProvider(this._dashboardRepository);
 
   final DashboardRepository _dashboardRepository;
 
-  List<String> _alerts = [];
+  DashboardSummary _summary = DashboardSummary.empty();
+  bool _isLoading = false;
+  String? _errorMessage;
 
-  List<String> get alerts => _alerts;
+  DashboardSummary get summary => _summary;
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
 
   Future<void> loadDashboard() async {
-    _alerts = await _dashboardRepository.getAlerts();
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _summary = await _dashboardRepository.getDashboardSummary();
+    } catch (error, stackTrace) {
+      _summary = DashboardSummary.empty();
+      _errorMessage = _messageFromError(error);
+      debugPrint('[DashboardProvider] loadDashboard failed: $_errorMessage');
+      debugPrintStack(stackTrace: stackTrace);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> refreshDashboard() => loadDashboard();
+
+  void clearError() {
+    _errorMessage = null;
     notifyListeners();
   }
 
-  DashboardOverview buildOverview({
-    required List<TransactionModel> transactions,
-    required List<FinancialProductModel> products,
-  }) {
-    final income = transactions
-        .where((item) => item.type == TransactionType.income)
-        .fold<double>(0, (sum, item) => sum + item.amount);
-    final expense = transactions
-        .where((item) => item.type == TransactionType.expense)
-        .fold<double>(0, (sum, item) => sum + item.amount);
-    final activeProducts = products.where((item) => item.isActive).length;
-
-    return DashboardOverview(
-      balance: income - expense,
-      income: income,
-      expense: expense,
-      estimatedSavings: (income - expense).clamp(0, double.infinity),
-      activeProducts: activeProducts,
-    );
+  String _messageFromError(Object error) {
+    if (error is FirebaseException) {
+      final message = error.message;
+      if (message == null || message.trim().isEmpty) {
+        return 'Firebase ${error.code}.';
+      }
+      return 'Firebase ${error.code}: $message';
+    }
+    if (error is StateError) {
+      return error.message;
+    }
+    return error.toString();
   }
 }

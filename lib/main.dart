@@ -55,8 +55,7 @@ class FinansmartApp extends StatelessWidget {
           create: (_) => FinancialHealthProvider(FinancialHealthRepository()),
         ),
         ChangeNotifierProvider(
-          create: (_) =>
-              DashboardProvider(const DashboardRepository())..loadDashboard(),
+          create: (_) => DashboardProvider(DashboardRepository()),
         ),
       ],
       child: MaterialApp(
