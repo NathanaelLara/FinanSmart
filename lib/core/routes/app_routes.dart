@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
+import '../../features/bank_notifications/presentation/screens/bank_notifications_screen.dart';
 import '../../features/dashboard/presentation/screens/home_screen.dart';
 
 class AppRoutes {
@@ -12,6 +13,8 @@ class AppRoutes {
   static const login = '/login';
   static const register = '/register';
   static const home = '/home';
+  static const financialProducts = '/financial-products';
+  static const bankNotifications = '/bank-notifications';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -23,6 +26,10 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const RegisterScreen());
       case home:
         return MaterialPageRoute(builder: (_) => const HomeScreen());
+      case bankNotifications:
+        return MaterialPageRoute(
+          builder: (_) => const BankNotificationsScreen(),
+        );
       default:
         return MaterialPageRoute(builder: (_) => const SplashScreen());
     }

@@ -36,89 +36,95 @@ class _FinancialProductsScreenState extends State<FinancialProductsScreen> {
     final provider = context.watch<FinancialProductsProvider>();
     final products = provider.filteredProducts;
 
-    return RefreshIndicator(
-      onRefresh: provider.loadProducts,
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        children: [
-          const SectionTitle(
-            title: 'Productos financieros',
-            subtitle: 'Administra tarjetas, prestamos, cuentas e inversiones.',
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              ChoiceChip(
-                label: const Text('Todos'),
-                selected: provider.selectedType == null,
-                onSelected: (_) => provider.setTypeFilter(null),
-              ),
-              ...FinancialProductType.values.map(
-                (type) => ChoiceChip(
-                  label: Text(type.displayName),
-                  selected: provider.selectedType == type,
-                  onSelected: (_) => provider.setTypeFilter(type),
+    return Scaffold(
+      appBar: AppBar(title: const Text('Productos financieros')),
+      body: RefreshIndicator(
+        onRefresh: provider.loadProducts,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          children: [
+            const SectionTitle(
+              title: 'Productos financieros',
+              subtitle:
+                  'Administra tarjetas, prestamos, cuentas e inversiones.',
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                ChoiceChip(
+                  label: const Text('Todos'),
+                  selected: provider.selectedType == null,
+                  onSelected: (_) => provider.setTypeFilter(null),
                 ),
-              ),
-              ChoiceChip(
-                label: const Text('Todas'),
-                selected: provider.selectedCurrency == null,
-                onSelected: (_) => provider.setCurrencyFilter(null),
-              ),
-              ChoiceChip(
-                label: const Text('DOP'),
-                selected: provider.selectedCurrency == CurrencyType.dop,
-                onSelected: (_) => provider.setCurrencyFilter(CurrencyType.dop),
-              ),
-              ChoiceChip(
-                label: const Text('USD'),
-                selected: provider.selectedCurrency == CurrencyType.usd,
-                onSelected: (_) => provider.setCurrencyFilter(CurrencyType.usd),
+                ...FinancialProductType.values.map(
+                  (type) => ChoiceChip(
+                    label: Text(type.displayName),
+                    selected: provider.selectedType == type,
+                    onSelected: (_) => provider.setTypeFilter(type),
+                  ),
+                ),
+                ChoiceChip(
+                  label: const Text('Todas'),
+                  selected: provider.selectedCurrency == null,
+                  onSelected: (_) => provider.setCurrencyFilter(null),
+                ),
+                ChoiceChip(
+                  label: const Text('DOP'),
+                  selected: provider.selectedCurrency == CurrencyType.dop,
+                  onSelected: (_) =>
+                      provider.setCurrencyFilter(CurrencyType.dop),
+                ),
+                ChoiceChip(
+                  label: const Text('USD'),
+                  selected: provider.selectedCurrency == CurrencyType.usd,
+                  onSelected: (_) =>
+                      provider.setCurrencyFilter(CurrencyType.usd),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            CustomButton(
+              label: 'Agregar producto',
+              icon: Icons.add_card_rounded,
+              isLoading: provider.isLoading,
+              onPressed: () => _openProductForm(context),
+            ),
+            if (provider.isLoading) ...[
+              const SizedBox(height: AppSpacing.md),
+              const LinearProgressIndicator(),
+            ],
+            if (provider.errorMessage != null) ...[
+              const SizedBox(height: AppSpacing.lg),
+              EmptyStateWidget(
+                title: 'No fue posible cargar tus productos',
+                subtitle: provider.errorMessage!,
+                icon: Icons.warning_amber_rounded,
               ),
             ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          CustomButton(
-            label: 'Agregar producto',
-            icon: Icons.add_card_rounded,
-            isLoading: provider.isLoading,
-            onPressed: () => _openProductForm(context),
-          ),
-          if (provider.isLoading) ...[
-            const SizedBox(height: AppSpacing.md),
-            const LinearProgressIndicator(),
-          ],
-          if (provider.errorMessage != null) ...[
             const SizedBox(height: AppSpacing.lg),
-            EmptyStateWidget(
-              title: 'No fue posible cargar tus productos',
-              subtitle: provider.errorMessage!,
-              icon: Icons.warning_amber_rounded,
-            ),
-          ],
-          const SizedBox(height: AppSpacing.lg),
-          if (!provider.isLoading && products.isEmpty)
-            const EmptyStateWidget(
-              title: 'Aun no tienes productos financieros registrados',
-              subtitle:
-                  'Agrega una tarjeta, prestamo o cuenta para analizar mejor tu salud financiera.',
-              icon: Icons.account_balance_wallet_outlined,
-            )
-          else
-            ...products.map(
-              (product) => _FinancialProductCard(
-                product: product,
-                onEdit: () => _openProductForm(context, product: product),
-                onDeactivate: product.isActive
-                    ? () => _deactivateProduct(context, product)
-                    : null,
-                onDelete: () => _deleteProduct(context, product),
+            if (!provider.isLoading && products.isEmpty)
+              const EmptyStateWidget(
+                title: 'Aun no tienes productos financieros registrados',
+                subtitle:
+                    'Agrega una tarjeta, prestamo o cuenta para analizar mejor tu salud financiera.',
+                icon: Icons.account_balance_wallet_outlined,
+              )
+            else
+              ...products.map(
+                (product) => _FinancialProductCard(
+                  product: product,
+                  onEdit: () => _openProductForm(context, product: product),
+                  onDeactivate: product.isActive
+                      ? () => _deactivateProduct(context, product)
+                      : null,
+                  onDelete: () => _deleteProduct(context, product),
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

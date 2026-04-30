@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../shared/widgets/custom_app_bar.dart';
-import '../../../financial_health/presentation/providers/financial_health_provider.dart';
+import '../../../budgets/presentation/providers/budgets_provider.dart';
+import '../../../budgets/presentation/screens/budgets_screen.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
+import '../../../financial_health/presentation/providers/financial_health_provider.dart';
 import '../../../financial_health/presentation/screens/financial_health_screen.dart';
 import '../../../financial_products/presentation/providers/financial_products_provider.dart';
-import '../../../financial_products/presentation/screens/financial_products_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import '../../../reports/presentation/providers/reports_provider.dart';
 import '../../../reports/presentation/screens/reports_screen.dart';
@@ -27,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   static const _titles = [
     'Dashboard',
     'Movimientos',
-    'Productos',
+    'Presupuesto',
     'Reportes',
     'Perfil',
   ];
@@ -35,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _screens = const [
     DashboardScreen(),
     TransactionsScreen(),
-    FinancialProductsScreen(),
+    BudgetsScreen(),
     ReportsScreen(),
     ProfileScreen(),
   ];
@@ -47,6 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context.read<DashboardProvider>().loadDashboard();
       context.read<TransactionsProvider>().loadTransactions();
       context.read<FinancialProductsProvider>().loadProducts();
+      context.read<BudgetsProvider>().loadBudgets();
       context.read<ReportsProvider>().loadReports();
       context.read<FinancialHealthProvider>().loadHealth();
     });
@@ -77,10 +79,15 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        height: 72,
         onDestinationSelected: (index) {
           setState(() => _currentIndex = index);
           if (index == 0) {
             context.read<DashboardProvider>().refreshDashboard();
+          }
+          if (index == 2) {
+            context.read<BudgetsProvider>().refreshBudgets();
           }
         },
         destinations: const [
@@ -92,12 +99,12 @@ class _HomeScreenState extends State<HomeScreen> {
           NavigationDestination(
             icon: Icon(Icons.receipt_long_outlined),
             selectedIcon: Icon(Icons.receipt_long_rounded),
-            label: 'Movimientos',
+            label: 'Movs.',
           ),
           NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet_rounded),
-            label: 'Productos',
+            icon: Icon(Icons.savings_outlined),
+            selectedIcon: Icon(Icons.savings_rounded),
+            label: 'Presup.',
           ),
           NavigationDestination(
             icon: Icon(Icons.summarize_outlined),

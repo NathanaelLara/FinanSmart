@@ -100,6 +100,20 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(height: AppSpacing.md),
+        _ProfileCard(
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.notifications_active_outlined),
+            title: const Text('Consumos automaticos'),
+            subtitle: const Text(
+              'Detecta consumos bancarios desde tus notificaciones',
+            ),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () =>
+                Navigator.pushNamed(context, AppRoutes.bankNotifications),
+          ),
+        ),
         const SizedBox(height: AppSpacing.xl),
         FilledButton.tonalIcon(
           onPressed: () async {

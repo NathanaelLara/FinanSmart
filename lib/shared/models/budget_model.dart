@@ -2,62 +2,32 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'transaction_model.dart';
 
-class BudgetCategoryEntry {
-  const BudgetCategoryEntry({
-    required this.categoryName,
-    required this.budgetAmount,
-    required this.spentAmount,
-    required this.availableAmount,
-  });
-
-  final String categoryName;
-  final double budgetAmount;
-  final double spentAmount;
-  final double availableAmount;
-
-  Map<String, dynamic> toMap() {
-    return {
-      'categoryName': categoryName,
-      'budgetAmount': budgetAmount,
-      'spentAmount': spentAmount,
-      'availableAmount': availableAmount,
-    };
-  }
-
-  factory BudgetCategoryEntry.fromMap(Map<String, dynamic> map) {
-    return BudgetCategoryEntry(
-      categoryName: map['categoryName'] as String? ?? '',
-      budgetAmount: (map['budgetAmount'] as num?)?.toDouble() ?? 0,
-      spentAmount: (map['spentAmount'] as num?)?.toDouble() ?? 0,
-      availableAmount: (map['availableAmount'] as num?)?.toDouble() ?? 0,
-    );
-  }
-}
-
 class BudgetModel {
   const BudgetModel({
     required this.id,
     required this.userId,
+    required this.categoryId,
+    required this.categoryName,
+    required this.currency,
+    required this.limitAmount,
     required this.month,
     required this.year,
-    required this.totalBudget,
-    required this.currency,
-    required this.spentAmount,
-    required this.availableAmount,
-    required this.categories,
+    this.notes,
+    this.isActive = true,
     this.createdAt,
     this.updatedAt,
   });
 
   final String id;
   final String userId;
+  final String categoryId;
+  final String categoryName;
+  final CurrencyType currency;
+  final double limitAmount;
   final int month;
   final int year;
-  final double totalBudget;
-  final CurrencyType currency;
-  final double spentAmount;
-  final double availableAmount;
-  final Map<String, BudgetCategoryEntry> categories;
+  final String? notes;
+  final bool isActive;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -67,16 +37,15 @@ class BudgetModel {
     return {
       'id': id,
       'userId': userId,
+      'categoryId': categoryId,
+      'categoryName': categoryName,
+      'currency': currency.code,
+      'limitAmount': limitAmount,
       'month': month,
       'year': year,
       'yearMonth': yearMonth,
-      'totalBudget': totalBudget,
-      'currency': currency.code,
-      'spentAmount': spentAmount,
-      'availableAmount': availableAmount,
-      'categories': categories.map(
-        (key, value) => MapEntry(key, value.toMap()),
-      ),
+      'notes': notes,
+      'isActive': isActive,
       'createdAt': createdAt == null
           ? FieldValue.serverTimestamp()
           : Timestamp.fromDate(createdAt!),
@@ -84,32 +53,68 @@ class BudgetModel {
     };
   }
 
-  factory BudgetModel.fromMap(Map<String, dynamic> map) {
-    final categoryMap = (map['categories'] as Map<String, dynamic>? ?? {}).map(
-      (key, value) => MapEntry(
-        key,
-        BudgetCategoryEntry.fromMap(Map<String, dynamic>.from(value as Map)),
-      ),
-    );
+  factory BudgetModel.fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    return BudgetModel.fromMap({...?doc.data(), 'id': doc.id});
+  }
 
+  factory BudgetModel.fromMap(Map<String, dynamic> map) {
     return BudgetModel(
       id: map['id'] as String? ?? '',
       userId: map['userId'] as String? ?? '',
-      month: map['month'] as int? ?? 1,
-      year: map['year'] as int? ?? DateTime.now().year,
-      totalBudget: (map['totalBudget'] as num?)?.toDouble() ?? 0,
+      categoryId: map['categoryId'] as String? ?? '',
+      categoryName: map['categoryName'] as String? ?? '',
       currency: CurrencyTypeX.fromCode(map['currency'] as String?),
-      spentAmount: (map['spentAmount'] as num?)?.toDouble() ?? 0,
-      availableAmount: (map['availableAmount'] as num?)?.toDouble() ?? 0,
-      categories: categoryMap,
+      limitAmount:
+          (map['limitAmount'] as num?)?.toDouble() ??
+          (map['totalBudget'] as num?)?.toDouble() ??
+          0,
+      month: (map['month'] as num?)?.toInt() ?? DateTime.now().month,
+      year: (map['year'] as num?)?.toInt() ?? DateTime.now().year,
+      notes: map['notes'] as String?,
+      isActive: map['isActive'] as bool? ?? true,
       createdAt: _readTimestamp(map['createdAt']),
       updatedAt: _readTimestamp(map['updatedAt']),
+    );
+  }
+
+  BudgetModel copyWith({
+    String? id,
+    String? userId,
+    String? categoryId,
+    String? categoryName,
+    CurrencyType? currency,
+    double? limitAmount,
+    int? month,
+    int? year,
+    String? notes,
+    bool? isActive,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return BudgetModel(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      categoryId: categoryId ?? this.categoryId,
+      categoryName: categoryName ?? this.categoryName,
+      currency: currency ?? this.currency,
+      limitAmount: limitAmount ?? this.limitAmount,
+      month: month ?? this.month,
+      year: year ?? this.year,
+      notes: notes ?? this.notes,
+      isActive: isActive ?? this.isActive,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
   static DateTime? _readTimestamp(dynamic value) {
     if (value is Timestamp) {
       return value.toDate();
+    }
+    if (value is DateTime) {
+      return value;
     }
     return null;
   }

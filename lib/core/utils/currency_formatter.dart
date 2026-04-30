@@ -9,17 +9,17 @@ class CurrencyFormatter {
     double amount, {
     CurrencyType currency = CurrencyType.dop,
   }) {
-    switch (currency) {
-      case CurrencyType.usd:
-        return NumberFormat.currency(
-          locale: 'en_US',
-          symbol: 'US\$',
-        ).format(amount);
-      case CurrencyType.dop:
-        return NumberFormat.currency(
-          locale: 'es_DO',
-          symbol: 'RD\$',
-        ).format(amount);
-    }
+    final formatter = NumberFormat.decimalPattern('es_DO')
+      ..minimumFractionDigits = 2
+      ..maximumFractionDigits = 2;
+
+    final symbol = switch (currency) {
+      CurrencyType.dop => 'RD\$',
+      CurrencyType.usd => 'US\$',
+    };
+    final formattedNumber = formatter.format(amount.abs());
+    final sign = amount < 0 ? '-' : '';
+
+    return '$sign$symbol$formattedNumber';
   }
 }

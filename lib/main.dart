@@ -8,6 +8,10 @@ import 'core/routes/app_routes.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/data/auth_repository.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
+import 'features/bank_notifications/data/bank_notifications_repository.dart';
+import 'features/bank_notifications/presentation/providers/bank_notifications_provider.dart';
+import 'features/budgets/data/budgets_repository.dart';
+import 'features/budgets/presentation/providers/budgets_provider.dart';
 import 'features/dashboard/data/dashboard_repository.dart';
 import 'features/dashboard/presentation/providers/dashboard_provider.dart';
 import 'features/financial_health/data/financial_health_repository.dart';
@@ -43,6 +47,13 @@ class FinansmartApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => TransactionsProvider(TransactionsRepository()),
+        ),
+        ChangeNotifierProvider(
+          create: (_) =>
+              BankNotificationsProvider(BankNotificationsRepository()),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => BudgetsProvider(BudgetsRepository()),
         ),
         ChangeNotifierProvider(
           create: (_) =>
